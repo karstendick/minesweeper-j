@@ -47,12 +47,17 @@
 ; The whole texture is 144x122 px
 ; Each cell is 15x15 px
 
+; TODO: Add entities for the num-rows*num-cols cells
+; TODO: Add a mask->entities function (same as board->entities?)
+
 (defn on-show
   [screen entities]
   (update! screen :renderer (stage) :camera (orthographic))
   (-> entities
       (conj {:type :board
              :board (make-board 9 9 10)})
+      (conj {:type :mask
+             :mask (make-mask 9 9)})
       (conj (assoc (texture "cloneskin.png"
                             :set-region 15 0 15 15)
               :x 50
@@ -61,7 +66,8 @@
               :height 15
               ))
       (conj (assoc (cell->texture 0) :x 10 :y 300 :cell true)) ; 0 cell
-      (conj (label "Hello world!" (color :white)))))
+      ;(conj (label "Hello world!" (color :white)))
+      ))
 
 (defn on-render
   [screen entities]
@@ -82,7 +88,25 @@
     (width! screen 800)
     nil))
 
+(defscreen text-screen
+  :on-show
+  (fn [screen entities]
+    (update! screen :camera (orthographic) :renderer (stage))
+    (assoc (label "0" (color :white))
+      :id :fps
+      :x 5))
+  :on-render
+  (fn [screen entities]
+    (->> (for [entity entities]
+           (case (:id entity)
+             :fps (doto entity (label! :set-text (str "FPS: " (game :fps))))
+             entity))
+         (render! screen)))
+  :on-resize
+  (fn [screen entities]
+    (height! screen 300)))
+
 (defgame minesweeper-j
   :on-create
   (fn [this]
-    (set-screen! this main-screen)))
+    (set-screen! this main-screen text-screen)))
